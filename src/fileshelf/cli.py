@@ -9,10 +9,12 @@ from rich.table import Table
 from rich.text import Text
 
 from fileshelf import __version__
+from fileshelf.apply import apply_plan
 from fileshelf.classify import category_order
 from fileshelf.format import human_mtime, human_size
 from fileshelf.planner import LAYOUTS, plan_from_scan
 from fileshelf.render import plan_summary, plan_table, plan_tree
+from fileshelf.safety import deny_reason, is_home
 from fileshelf.scanner import scan as scan_dir
 from fileshelf.ui import banner, console
 
@@ -68,6 +70,7 @@ def scan(
 ) -> None:
     """Classify files in a folder. Read-only."""
     root = path.expanduser()
+    _assert_allowed(root)
     console.print(banner(path=str(root), subtitle="scan"))
 
     with console.status("[shelf.muted]scanning…[/]"):
@@ -147,6 +150,25 @@ def scan(
         console.print(f"[shelf.warn]{len(result.errors)} paths skipped due to errors[/]")
 
 
+def _assert_allowed(root: Path, *, dest: Path | None = None, force_home: bool = False, applying: bool = False) -> None:
+    extra = (Path.home() / "Library",)
+    reason = deny_reason(root, extra)
+    if reason:
+        console.print(f"[shelf.err]Refusing to touch {root}: {reason}[/]")
+        raise typer.Exit(code=1)
+    if dest is not None:
+        dest_reason = deny_reason(dest.expanduser(), extra)
+        if dest_reason:
+            console.print(f"[shelf.err]Refusing destination {dest}: {dest_reason}[/]")
+            raise typer.Exit(code=1)
+    if applying and is_home(root) and not force_home:
+        console.print(
+            "[shelf.err]Refusing to organize $HOME without --force-home "
+            "(that would reshuffle your whole home directory)[/]"
+        )
+        raise typer.Exit(code=1)
+
+
 def _scan_or_exit(root: Path, recursive: bool, hidden: bool):
     with console.status("[shelf.muted]scanning…[/]"):
         result = scan_dir(root, recursive=recursive, include_hidden=hidden)
@@ -187,6 +209,7 @@ def plan(
         raise typer.Exit(code=2)
 
     root = path.expanduser()
+    _assert_allowed(root, dest=dest)
     console.print(banner(path=str(root), dry_run=True, subtitle=f"layout: {layout}"))
     result = _scan_or_exit(root, recursive, hidden)
     organized = plan_from_scan(result, dest=dest, layout=layout)
@@ -198,3 +221,86 @@ def plan(
         if limit and organized.move_count > limit:
             console.print(f"[shelf.muted]showing {limit} of {organized.move_count} moves — pass --limit 0 for all[/]")
     console.print(plan_summary(organized))
+
+
+@app.command()
+def organize(
+    path: Path = typer.Argument(
+        Path("."),
+        help="Folder to organize.",
+        show_default="current directory",
+    ),
+    dest: Path | None = typer.Option(None, "--dest", "-d", help="Shelf root (defaults to the scanned folder)."),
+    layout: str = typer.Option("smart", "--layout", "-l", help="Shelf layout: smart, type, date, type-date."),
+    apply_moves: bool = typer.Option(False, "--apply", help="Actually move files. Dry-run otherwise."),
+    yes: bool = typer.Option(False, "--yes", "-y", help="Skip the confirmation prompt (with --apply)."),
+    conflict: str = typer.Option(
+        "rename",
+        "--conflict",
+        help="When the destination exists: rename, skip, or overwrite.",
+    ),
+    recursive: bool = typer.Option(True, "--recursive/--one-level"),
+    hidden: bool = typer.Option(False, "--hidden"),
+    force_home: bool = typer.Option(False, "--force-home", help="Allow organizing $HOME (dangerous)."),
+    limit: int = typer.Option(30, "--limit", min=0),
+) -> None:
+    """Move files onto shelves. Dry-run unless --apply is passed."""
+    if layout not in LAYOUTS:
+        console.print(f"[shelf.err]Unknown layout '{layout}'. Choose from: {', '.join(LAYOUTS)}[/]")
+        raise typer.Exit(code=2)
+    if conflict not in {"rename", "skip", "overwrite"}:
+        console.print("[shelf.err]--conflict must be rename, skip, or overwrite[/]")
+        raise typer.Exit(code=2)
+
+    root = path.expanduser()
+    _assert_allowed(root, dest=dest, force_home=force_home, applying=apply_moves)
+    console.print(
+        banner(
+            path=str(root),
+            dry_run=not apply_moves,
+            subtitle=f"layout: {layout}",
+        )
+    )
+    result = _scan_or_exit(root, recursive, hidden)
+    organized = plan_from_scan(result, dest=dest, layout=layout)
+    console.print(plan_table(organized, limit=limit))
+    console.print(plan_summary(organized))
+
+    if not organized.actions:
+        console.print("[shelf.muted]Nothing to move.[/]")
+        raise typer.Exit()
+
+    if not apply_moves:
+        console.print("[shelf.muted]Dry-run only. Pass --apply to move files.[/]")
+        raise typer.Exit()
+
+    if not yes:
+        from rich.prompt import Confirm
+
+        if not Confirm.ask(
+            f"[shelf.warn]Move {organized.move_count} files now?[/]",
+            default=False,
+        ):
+            console.print("[shelf.muted]Cancelled.[/]")
+            raise typer.Exit()
+
+    applied = apply_plan(
+        organized,
+        dry_run=False,
+        conflict=conflict,
+        force_home=force_home,
+    )
+    if applied.errors and not applied.moved:
+        for err in applied.errors:
+            console.print(f"[shelf.err]{err}[/]")
+        raise typer.Exit(code=1)
+
+    console.print(
+        f"[shelf.ok]Moved {len(applied.moved)} files[/]  ·  session [bold]{applied.session_id}[/]"
+    )
+    if applied.journal_path:
+        console.print(f"[shelf.muted]journal: {applied.journal_path}[/]")
+    if applied.skipped:
+        console.print(f"[shelf.warn]Skipped {len(applied.skipped)} files[/]")
+    for err in applied.errors:
+        console.print(f"[shelf.err]{err}[/]")

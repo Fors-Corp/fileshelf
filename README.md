@@ -15,8 +15,8 @@ applied session can be undone.
 
 ## Status
 
-**v0.3.0** — scan, classify, and preview a shelf plan. Feature work lands
-version by version; see [ROADMAP.md](ROADMAP.md).
+**v0.4.0** — scan, plan, and safely apply (dry-run by default). See
+[ROADMAP.md](ROADMAP.md).
 
 ## Install
 
@@ -40,10 +40,12 @@ shelf --help
 ```bash
 shelf scan ~/Downloads
 shelf plan ~/Downloads --tree
-shelf plan ~/Downloads --layout type-date
+shelf organize ~/Downloads                 # dry-run
+shelf organize ~/Downloads --apply         # asks before moving
+shelf organize ~/Downloads --apply --yes   # no prompt
 ```
 
-Coming next: `organize`, `tui`, `undo`.
+Coming next: config, duplicates, `tui`, `undo`.
 
 ## License
 

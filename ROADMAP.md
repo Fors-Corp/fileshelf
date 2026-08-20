@@ -18,8 +18,8 @@ and reversible.
 | --- | --- | --- |
 | **0.1.0** | shipped | Package scaffold, branded CLI, `--version` / `--help` |
 | **0.2.0** | shipped | Scan a folder and classify files (type + size + age) with a Rich table |
-| **0.3.0** | current | Organization *plan*: type, date, type+date, and smart layouts |
-| **0.4.0** | planned | Safe apply: dry-run, conflict handling, deny-list, move journal |
+| **0.3.0** | shipped | Organization *plan*: type, date, type+date, and smart layouts |
+| **0.4.0** | current | Safe apply: dry-run, conflict handling, deny-list, move journal |
 | **0.5.0** | planned | Config file, custom rules, duplicate detection |
 | **0.6.0** | planned | Interactive Textual TUI (browse, toggle, confirm) |
 | **0.7.0** | planned | Undo last session, history browser, `doctor` |
