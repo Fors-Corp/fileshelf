@@ -15,7 +15,7 @@ applied session can be undone.
 
 ## Status
 
-**v0.1.0** — CLI scaffold. Feature work lands version by version; see
+**v0.2.0** — scan and classify. Feature work lands version by version; see
 [ROADMAP.md](ROADMAP.md).
 
 ## Install
@@ -39,10 +39,11 @@ shelf --help
 
 ```bash
 shelf --version
-shelf --help
+shelf scan ~/Downloads
+shelf scan ~/Downloads --limit 20
 ```
 
-Coming next: `scan`, `plan`, `organize`, `tui`, `undo`.
+Coming next: `plan`, `organize`, `tui`, `undo`.
 
 ## License
 
