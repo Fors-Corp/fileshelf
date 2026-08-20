@@ -11,6 +11,8 @@ from rich.text import Text
 from fileshelf import __version__
 from fileshelf.classify import category_order
 from fileshelf.format import human_mtime, human_size
+from fileshelf.planner import LAYOUTS, plan_from_scan
+from fileshelf.render import plan_summary, plan_table, plan_tree
 from fileshelf.scanner import scan as scan_dir
 from fileshelf.ui import banner, console
 
@@ -143,3 +145,56 @@ def scan(
 
     if result.errors:
         console.print(f"[shelf.warn]{len(result.errors)} paths skipped due to errors[/]")
+
+
+def _scan_or_exit(root: Path, recursive: bool, hidden: bool):
+    with console.status("[shelf.muted]scanning…[/]"):
+        result = scan_dir(root, recursive=recursive, include_hidden=hidden)
+    if result.errors and not result.files:
+        for err in result.errors:
+            console.print(f"[shelf.err]{err}[/]")
+        raise typer.Exit(code=1)
+    return result
+
+
+@app.command()
+def plan(
+    path: Path = typer.Argument(
+        Path("."),
+        help="Folder to organize.",
+        show_default="current directory",
+    ),
+    dest: Path | None = typer.Option(
+        None,
+        "--dest",
+        "-d",
+        help="Shelf root (defaults to the scanned folder).",
+    ),
+    layout: str = typer.Option(
+        "smart",
+        "--layout",
+        "-l",
+        help="Shelf layout: smart, type, date, type-date.",
+    ),
+    recursive: bool = typer.Option(True, "--recursive/--one-level"),
+    hidden: bool = typer.Option(False, "--hidden"),
+    tree: bool = typer.Option(False, "--tree", help="Show destination tree instead of a file table."),
+    limit: int = typer.Option(30, "--limit", min=0, help="Max rows in the file table (0 = all)."),
+) -> None:
+    """Preview where files would be shelved. Read-only."""
+    if layout not in LAYOUTS:
+        console.print(f"[shelf.err]Unknown layout '{layout}'. Choose from: {', '.join(LAYOUTS)}[/]")
+        raise typer.Exit(code=2)
+
+    root = path.expanduser()
+    console.print(banner(path=str(root), dry_run=True, subtitle=f"layout: {layout}"))
+    result = _scan_or_exit(root, recursive, hidden)
+    organized = plan_from_scan(result, dest=dest, layout=layout)
+
+    if tree:
+        console.print(plan_tree(organized))
+    else:
+        console.print(plan_table(organized, limit=limit))
+        if limit and organized.move_count > limit:
+            console.print(f"[shelf.muted]showing {limit} of {organized.move_count} moves — pass --limit 0 for all[/]")
+    console.print(plan_summary(organized))

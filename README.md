@@ -15,8 +15,8 @@ applied session can be undone.
 
 ## Status
 
-**v0.2.0** — scan and classify. Feature work lands version by version; see
-[ROADMAP.md](ROADMAP.md).
+**v0.3.0** — scan, classify, and preview a shelf plan. Feature work lands
+version by version; see [ROADMAP.md](ROADMAP.md).
 
 ## Install
 
@@ -38,12 +38,12 @@ shelf --help
 ## Quick start
 
 ```bash
-shelf --version
 shelf scan ~/Downloads
-shelf scan ~/Downloads --limit 20
+shelf plan ~/Downloads --tree
+shelf plan ~/Downloads --layout type-date
 ```
 
-Coming next: `plan`, `organize`, `tui`, `undo`.
+Coming next: `organize`, `tui`, `undo`.
 
 ## License
 

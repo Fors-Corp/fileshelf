@@ -33,3 +33,35 @@ class ScanResult:
         for item in self.files:
             groups.setdefault(item.category, []).append(item)
         return groups
+
+
+@dataclass(frozen=True)
+class MoveAction:
+    source: Path
+    destination: Path
+    category: str
+    subcategory: str | None
+    reason: str
+    size_bytes: int
+    conflict: str | None = None  # exists | collision
+
+
+@dataclass
+class Plan:
+    root: Path
+    destination_root: Path
+    layout: str
+    actions: list[MoveAction] = field(default_factory=list)
+    skipped: list[tuple[Path, str]] = field(default_factory=list)
+
+    @property
+    def move_count(self) -> int:
+        return len(self.actions)
+
+    @property
+    def conflict_count(self) -> int:
+        return sum(1 for a in self.actions if a.conflict)
+
+    @property
+    def total_size(self) -> int:
+        return sum(a.size_bytes for a in self.actions)
