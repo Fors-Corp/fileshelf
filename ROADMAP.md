@@ -21,8 +21,8 @@ and reversible.
 | **0.3.0** | shipped | Organization *plan*: type, date, type+date, and smart layouts |
 | **0.4.0** | shipped | Safe apply: dry-run, conflict handling, deny-list, move journal |
 | **0.5.0** | shipped | Config file, custom rules, duplicate detection |
-| **0.6.0** | current | Interactive Textual TUI (browse, toggle, confirm) |
-| **0.7.0** | planned | Undo last session, history browser, `doctor` |
+| **0.6.0** | shipped | Interactive Textual TUI (browse, toggle, confirm) |
+| **0.7.0** | current | Undo last session, history browser, `doctor` |
 | **1.0.0** | planned | Tests, installer, stable CLI surface |
 
 Each version is a tagged git commit (`v0.1.0`, `v0.2.0`, …).

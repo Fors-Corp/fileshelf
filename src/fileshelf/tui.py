@@ -17,6 +17,7 @@ from fileshelf.format import human_size
 from fileshelf.models import MoveAction, Plan, ScanResult
 from fileshelf.planner import LAYOUTS, plan_from_scan
 from fileshelf.scanner import scan as scan_dir
+from fileshelf.undo import latest_undoable, undo_session
 
 _CSS = """
 Screen {
@@ -157,6 +158,7 @@ class ShelfApp(App[None]):
         Binding("r", "reload", "Rescan"),
         Binding("l", "cycle_layout", "Layout"),
         Binding("d", "toggle_dupes", "Skip dupes"),
+        Binding("u", "undo", "Undo"),
         Binding("tab", "focus_next", "Focus", show=False),
     ]
 
@@ -337,6 +339,26 @@ class ShelfApp(App[None]):
 
     def action_reload(self) -> None:
         self._reload()
+
+    def action_undo(self) -> None:
+        session = latest_undoable()
+        if session is None:
+            self.notify("Nothing to undo.", severity="warning")
+            return
+        sid = str(session["id"])
+        n = len(session.get("moves") or [])
+
+        def _done(confirmed: bool | None) -> None:
+            if not confirmed:
+                return
+            result = undo_session(sid, dry_run=False)
+            if result.errors and not result.restored:
+                self.notify(result.errors[0], severity="error")
+                return
+            self.notify(f"Restored {len(result.restored)} files from {sid}")
+            self._reload()
+
+        self.push_screen(ConfirmScreen(f"Undo session {sid} ({n} files)?"), _done)
 
     def action_apply(self) -> None:
         included = [a for a in self.actions if str(a.source) not in self.excluded]

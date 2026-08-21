@@ -41,7 +41,7 @@ def _same_volume(a: Path, b: Path) -> bool:
         return False
 
 
-def _move(src: Path, dst: Path) -> None:
+def move_file(src: Path, dst: Path) -> None:
     dst.parent.mkdir(parents=True, exist_ok=True)
     if _same_volume(src, dst.parent):
         src.rename(dst)
@@ -119,7 +119,7 @@ def apply_plan(
             continue
 
         try:
-            _move(action.source, dest)
+            move_file(action.source, dest)
             result.moved.append(moved)
         except OSError as exc:
             result.errors.append(f"{action.source} → {dest}: {exc}")

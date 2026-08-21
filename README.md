@@ -15,7 +15,7 @@ applied session can be undone.
 
 ## Status
 
-**v0.6.0** — scan, plan, apply, config, duplicates, and an interactive TUI. See
+**v0.7.0** — full loop: scan, plan, apply, TUI, undo, history, doctor. See
 [ROADMAP.md](ROADMAP.md).
 
 ## Install
@@ -55,7 +55,14 @@ shelf config show
 shelf tui ~/Downloads
 ```
 
-Coming next: `undo`, `history`, `doctor`.
+```bash
+shelf history
+shelf undo --dry-run
+shelf undo --yes
+shelf doctor
+```
+
+Coming next: tests, installer, 1.0.0.
 
 ## License
 

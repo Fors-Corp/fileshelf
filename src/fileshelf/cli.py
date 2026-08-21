@@ -18,8 +18,10 @@ from fileshelf.format import human_mtime, human_size
 from fileshelf.planner import LAYOUTS, plan_from_scan
 from fileshelf.render import plan_summary, plan_table, plan_tree
 from fileshelf.safety import deny_reason, is_home
+from fileshelf.journal import data_dir, history_dir, list_sessions
 from fileshelf.scanner import scan as scan_dir
 from fileshelf.ui import banner, console
+from fileshelf.undo import latest_undoable, undo_session
 
 app = typer.Typer(
     add_completion=False,
@@ -445,3 +447,117 @@ def config_init(
     """Write a default config to ~/.fileshelf/config.toml."""
     path = write_default_config(overwrite=overwrite)
     console.print(f"[shelf.ok]Wrote {path}[/]")
+
+
+@app.command("history")
+def history_cmd() -> None:
+    """List applied organization sessions."""
+    console.print(banner(subtitle="history"))
+    sessions = list_sessions()
+    if not sessions:
+        console.print("[shelf.muted]No sessions yet. Apply a plan with [bold]shelf organize --apply[/bold].[/]")
+        raise typer.Exit()
+
+    table = Table(border_style="#3d4f63", header_style="shelf.accent")
+    table.add_column("Session")
+    table.add_column("When", style="shelf.muted")
+    table.add_column("Moves", justify="right")
+    table.add_column("Layout")
+    table.add_column("Root", style="shelf.path")
+    table.add_column("State")
+    for session in sessions:
+        state = Text("undone", style="shelf.warn") if session.get("undone_at") else Text("applied", style="shelf.ok")
+        table.add_row(
+            session.get("id", "?"),
+            str(session.get("started_at", ""))[:19].replace("T", " "),
+            str(len(session.get("moves") or [])),
+            str(session.get("layout", "")),
+            str(session.get("root", "")),
+            state,
+        )
+    console.print(table)
+
+
+@app.command()
+def undo(
+    session: str | None = typer.Option(None, "--session", "-s", help="Session id (defaults to the last applied)."),
+    yes: bool = typer.Option(False, "--yes", "-y", help="Skip the confirmation prompt."),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Show what would be restored without moving."),
+) -> None:
+    """Restore files from the last (or a given) applied session."""
+    console.print(banner(dry_run=dry_run, subtitle="undo"))
+    try:
+        preview = undo_session(session, dry_run=True)
+    except FileNotFoundError as exc:
+        console.print(f"[shelf.err]{exc}[/]")
+        raise typer.Exit(code=1)
+
+    if preview.errors and not preview.restored:
+        for err in preview.errors:
+            console.print(f"[shelf.err]{err}[/]")
+        raise typer.Exit(code=1)
+
+    table = Table(title=f"Undo {preview.session_id}", border_style="#3d4f63", header_style="shelf.accent")
+    table.add_column("From")
+    table.add_column("Back to")
+    for src, dst in preview.restored:
+        table.add_row(str(src), str(dst))
+    console.print(table)
+    console.print(f"[shelf.brand]{len(preview.restored)} files[/] would be restored")
+    if preview.skipped:
+        console.print(f"[shelf.warn]{len(preview.skipped)} missing at destination[/]")
+
+    if dry_run:
+        console.print("[shelf.muted]Dry-run only. Drop --dry-run to restore.[/]")
+        raise typer.Exit()
+
+    if not yes:
+        from rich.prompt import Confirm
+
+        if not Confirm.ask(f"[shelf.warn]Restore {len(preview.restored)} files from session {preview.session_id}?[/]", default=False):
+            console.print("[shelf.muted]Cancelled.[/]")
+            raise typer.Exit()
+
+    result = undo_session(preview.session_id, dry_run=False)
+    if result.errors and not result.restored:
+        for err in result.errors:
+            console.print(f"[shelf.err]{err}[/]")
+        raise typer.Exit(code=1)
+    console.print(f"[shelf.ok]Restored {len(result.restored)} files[/] from session [bold]{result.session_id}[/]")
+    for err in result.errors:
+        console.print(f"[shelf.err]{err}[/]")
+
+
+@app.command()
+def doctor() -> None:
+    """Check the local environment, config, and history. Read-only."""
+    import os
+    import sys
+    from importlib.metadata import version as pkg_version
+
+    console.print(banner(subtitle="doctor"))
+    table = Table(border_style="#3d4f63", header_style="shelf.accent", show_header=False)
+    table.add_column("Check", style="shelf.cat")
+    table.add_column("Value")
+
+    def row(name: str, value: str, ok: bool = True) -> None:
+        mark = Text("ok", style="shelf.ok") if ok else Text("warn", style="shelf.warn")
+        table.add_row(name, Text.assemble(mark, "  ", value))
+
+    row("fileshelf", __version__)
+    row("python", sys.version.split()[0], sys.version_info >= (3, 11))
+    row("rich", pkg_version("rich"))
+    row("textual", pkg_version("textual"))
+    cfg_file = config_path()
+    row("config", str(cfg_file), cfg_file.exists())
+    ddir = data_dir()
+    writable = os.access(ddir, os.W_OK) if ddir.exists() else os.access(ddir.parent, os.W_OK)
+    row("data dir", str(ddir), writable)
+    sessions = list_sessions()
+    undoable = latest_undoable()
+    row("history", f"{len(sessions)} sessions in {history_dir()}")
+    row("undo", undoable["id"] if undoable else "nothing to undo", bool(undoable) or not sessions)
+    row("home", str(Path.home()))
+    console.print(table)
+    if not cfg_file.exists():
+        console.print("[shelf.muted]Tip: run [bold]shelf config init[/bold] to write a config file.[/]")
