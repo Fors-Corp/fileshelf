@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
+from typing import Iterable
+
+from fileshelf.config import Rule
 
 # Lowercase extension → (category, default subcategory or None)
 _EXT: dict[str, tuple[str, str | None]] = {}
@@ -77,10 +80,19 @@ def extension_of(path: Path) -> str:
     return path.suffix.lower().lstrip(".")
 
 
-def classify(path: Path) -> tuple[str, str | None, str]:
+def classify(path: Path, rules: Iterable[Rule] | None = None) -> tuple[str, str | None, str]:
     """Return (category, subcategory, reason)."""
     name = path.name
     ext = extension_of(path)
+
+    for rule in rules or []:
+        try:
+            pattern = re.compile(rule.match)
+        except re.error:
+            continue
+        if pattern.search(name):
+            label = rule.name or rule.match
+            return rule.category, rule.subcategory, f"rule:{label}"
 
     if _WHATSAPP.search(name):
         cat, _ = _EXT.get(ext, ("Images", None))

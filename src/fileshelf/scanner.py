@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 
 from fileshelf.classify import classify, extension_of
+from fileshelf.config import Rule
 from fileshelf.models import FileItem, ScanResult
 
 SKIP_DIR_NAMES = {
@@ -35,6 +36,7 @@ def scan(
     extra_skip_dirs: frozenset[str] | set[str] | None = None,
     follow_symlinks: bool = False,
     max_depth: int | None = None,
+    rules: list[Rule] | None = None,
 ) -> ScanResult:
     root = root.expanduser().resolve()
     result = ScanResult(root=root)
@@ -94,7 +96,7 @@ def scan(
                 result.errors.append(f"{path}: {exc}")
                 continue
 
-            category, subcategory, reason = classify(path)
+            category, subcategory, reason = classify(path, rules=rules)
             result.files.append(
                 FileItem(
                     path=path,

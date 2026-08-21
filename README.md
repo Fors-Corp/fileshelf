@@ -15,7 +15,7 @@ applied session can be undone.
 
 ## Status
 
-**v0.4.0** — scan, plan, and safely apply (dry-run by default). See
+**v0.5.0** — scan, plan, apply, config, and duplicate detection. See
 [ROADMAP.md](ROADMAP.md).
 
 ## Install
@@ -45,7 +45,13 @@ shelf organize ~/Downloads --apply         # asks before moving
 shelf organize ~/Downloads --apply --yes   # no prompt
 ```
 
-Coming next: config, duplicates, `tui`, `undo`.
+```bash
+shelf duplicates ~/Downloads
+shelf config init
+shelf config show
+```
+
+Coming next: `tui`, `undo`.
 
 ## License
 

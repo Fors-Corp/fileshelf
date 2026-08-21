@@ -91,5 +91,5 @@ def plan_summary(plan: Plan) -> Text:
         text.append("no conflicts", style="shelf.ok")
     if plan.skipped:
         text.append("  ·  ", style="shelf.muted")
-        text.append(f"{len(plan.skipped)} already shelved", style="shelf.muted")
+        text.append(f"{len(plan.skipped)} skipped", style="shelf.muted")
     return text
