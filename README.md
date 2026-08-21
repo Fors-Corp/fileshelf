@@ -15,7 +15,7 @@ applied session can be undone.
 
 ## Status
 
-**v0.5.0** — scan, plan, apply, config, and duplicate detection. See
+**v0.6.0** — scan, plan, apply, config, duplicates, and an interactive TUI. See
 [ROADMAP.md](ROADMAP.md).
 
 ## Install
@@ -51,7 +51,11 @@ shelf config init
 shelf config show
 ```
 
-Coming next: `tui`, `undo`.
+```bash
+shelf tui ~/Downloads
+```
+
+Coming next: `undo`, `history`, `doctor`.
 
 ## License
 

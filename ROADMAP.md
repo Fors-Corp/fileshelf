@@ -20,8 +20,8 @@ and reversible.
 | **0.2.0** | shipped | Scan a folder and classify files (type + size + age) with a Rich table |
 | **0.3.0** | shipped | Organization *plan*: type, date, type+date, and smart layouts |
 | **0.4.0** | shipped | Safe apply: dry-run, conflict handling, deny-list, move journal |
-| **0.5.0** | current | Config file, custom rules, duplicate detection |
-| **0.6.0** | planned | Interactive Textual TUI (browse, toggle, confirm) |
+| **0.5.0** | shipped | Config file, custom rules, duplicate detection |
+| **0.6.0** | current | Interactive Textual TUI (browse, toggle, confirm) |
 | **0.7.0** | planned | Undo last session, history browser, `doctor` |
 | **1.0.0** | planned | Tests, installer, stable CLI surface |
 

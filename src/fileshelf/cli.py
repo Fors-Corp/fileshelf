@@ -345,6 +345,30 @@ def organize(
 
 
 @app.command()
+def tui(
+    path: Path = typer.Argument(
+        Path("."),
+        help="Folder to organize.",
+        show_default="current directory",
+    ),
+    dest: Path | None = typer.Option(None, "--dest", "-d", help="Shelf root (defaults to the scanned folder)."),
+    layout: str | None = typer.Option(None, "--layout", "-l", help="Shelf layout: smart, type, date, type-date."),
+    force_home: bool = typer.Option(False, "--force-home", help="Allow organizing $HOME (dangerous)."),
+) -> None:
+    """Interactive terminal UI for reviewing and applying a plan."""
+    from fileshelf.tui import run_tui
+
+    cfg = _cfg()
+    layout = layout or cfg.layout
+    if layout not in LAYOUTS:
+        console.print(f"[shelf.err]Unknown layout '{layout}'. Choose from: {', '.join(LAYOUTS)}[/]")
+        raise typer.Exit(code=2)
+    root = path.expanduser().resolve()
+    _assert_allowed(root, cfg, dest=dest, force_home=force_home, applying=False)
+    run_tui(root, dest=dest, layout=layout, force_home=force_home)
+
+
+@app.command()
 def duplicates(
     path: Path = typer.Argument(
         Path("."),
