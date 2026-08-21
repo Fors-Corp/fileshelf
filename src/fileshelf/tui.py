@@ -169,6 +169,7 @@ class ShelfApp(App[None]):
         layout: str,
         cfg: Config,
         force_home: bool = False,
+        recursive: bool | None = None,
     ) -> None:
         super().__init__()
         self.root = root
@@ -176,6 +177,7 @@ class ShelfApp(App[None]):
         self.layout = layout
         self.cfg = cfg
         self.force_home = force_home
+        self.recursive = cfg.recursive if recursive is None else recursive
         self.skip_duplicates = cfg.skip_duplicates
         self.scan_result: ScanResult | None = None
         self.plan: Plan | None = None
@@ -213,7 +215,7 @@ class ShelfApp(App[None]):
     def _scan_worker(self) -> None:
         result = scan_dir(
             self.root,
-            recursive=self.cfg.recursive,
+            recursive=self.recursive,
             include_hidden=self.cfg.include_hidden,
             extra_skip_dirs=set(self.cfg.skip_directories),
             rules=self.cfg.rules,
@@ -233,7 +235,8 @@ class ShelfApp(App[None]):
         self.actions = list(organized.actions)
         still = {str(a.source) for a in self.actions}
         self.excluded &= still
-        self.sub_title = f"{self.root}  ·  {self.layout}"
+        depth = "one-level" if not self.recursive else "recursive"
+        self.sub_title = f"{self.root}  ·  {self.layout}  ·  {depth}"
         self._fill_categories()
         self._fill_table()
         self._fill_summary()
@@ -408,6 +411,14 @@ def run_tui(
     layout: str = "smart",
     *,
     force_home: bool = False,
+    recursive: bool | None = None,
 ) -> None:
     cfg = load_config()
-    ShelfApp(root=root, dest=dest, layout=layout, cfg=cfg, force_home=force_home).run()
+    ShelfApp(
+        root=root,
+        dest=dest,
+        layout=layout,
+        cfg=cfg,
+        force_home=force_home,
+        recursive=recursive,
+    ).run()

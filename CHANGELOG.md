@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.1
+
+`shelf tui` accepts `--one-level` / `--recursive` so the interactive UI can match CLI scan depth.
+
 ## 1.0.0
 
 Stable CLI: tests, installer, and documented command surface.

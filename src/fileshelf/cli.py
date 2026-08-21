@@ -355,6 +355,7 @@ def tui(
     ),
     dest: Path | None = typer.Option(None, "--dest", "-d", help="Shelf root (defaults to the scanned folder)."),
     layout: str | None = typer.Option(None, "--layout", "-l", help="Shelf layout: smart, type, date, type-date."),
+    recursive: bool = typer.Option(True, "--recursive/--one-level", help="Walk subfolders, or only the top level."),
     force_home: bool = typer.Option(False, "--force-home", help="Allow organizing $HOME (dangerous)."),
 ) -> None:
     """Interactive terminal UI for reviewing and applying a plan."""
@@ -367,7 +368,7 @@ def tui(
         raise typer.Exit(code=2)
     root = path.expanduser().resolve()
     _assert_allowed(root, cfg, dest=dest, force_home=force_home, applying=False)
-    run_tui(root, dest=dest, layout=layout, force_home=force_home)
+    run_tui(root, dest=dest, layout=layout, force_home=force_home, recursive=recursive)
 
 
 @app.command()
