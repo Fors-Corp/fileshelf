@@ -1,5 +1,7 @@
 # fileshelf
 
+[![Support · 1,99 €](https://img.shields.io/badge/Support-1%2C99_%E2%82%AC-2f855a)](https://marcfors.com/donate?from=fileshelf)
+
 Smart file organizer with a polished terminal UI.
 
 `shelf` looks at a messy folder, classifies what it finds, proposes a shelf
@@ -120,6 +122,10 @@ pytest
 ```
 
 Versioning follows [semver](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md).
+
+## Support
+
+If this project is useful to you, you can [support it with 1,99 €](https://marcfors.com/donate?from=fileshelf).
 
 ## License
 
