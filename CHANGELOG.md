@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+Added: Support · 1,99 € link in the README and one line at the end of `shelf --help`.
+
 ## 1.0.1
 
 `shelf tui` accepts `--one-level` / `--recursive` so the interactive UI can match CLI scan depth.

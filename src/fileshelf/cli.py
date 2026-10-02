@@ -23,10 +23,13 @@ from fileshelf.scanner import scan as scan_dir
 from fileshelf.ui import banner, console
 from fileshelf.undo import latest_undoable, undo_session
 
+SUPPORT_LINE = "Support this project: https://marcfors.com/donate?from=fileshelf"
+
 app = typer.Typer(
     add_completion=False,
     no_args_is_help=True,
     help="Smart file organizer with a polished terminal UI.",
+    epilog=SUPPORT_LINE,
 )
 config_app = typer.Typer(no_args_is_help=True, help="View or create ~/.fileshelf/config.toml.")
 app.add_typer(config_app, name="config")
